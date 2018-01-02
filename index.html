@@ -1,0 +1,29 @@
+<html>
+<script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+<script>
+/*global saveAs */
+function convert2Midi() {
+  var files = document.getElementById('files').files;
+  var file = files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var view = new DataView(e.target.result);
+    var length = view.byteLength, offset = 4, startpos = 0, endpos = length;
+    while (offset < length - 4) {
+      var marker = view.getUint32(offset, false);
+      if (marker == 0x4D546864) {
+          startpos = offset;
+      }
+      if (startpos > 0 && marker >= 0x43485300 && marker < 0x43485400) {
+        endpos = offset;
+      }
+      offset += 1;
+    }
+    saveAs(file.slice(startpos, endpos + 3),file.name.substr(0, file.name.lastIndexOf(".")) + ".mid");
+  };
+  reader.readAsArrayBuffer(file);
+}
+</script>
+<input type="file" id="files" name="file" />
+<button onclick="convert2Midi()">Convert</button>
+</html>
