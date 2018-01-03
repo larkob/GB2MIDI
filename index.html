@@ -1,29 +1,63 @@
 <html>
-<script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/combine/npm/jszip@3.1.5/dist/jszip.min.js,npm/@elastic/filesaver@1.1.2"></script>
 <script>
-/*global saveAs */
-function convert2Midi() {
-  var files = document.getElementById('files').files;
-  var file = files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var view = new DataView(e.target.result);
-    var length = view.byteLength, offset = 4, startpos = 0, endpos = length;
-    while (offset < length - 4) {
-      var marker = view.getUint32(offset, false);
-      if (marker == 0x4D546864) {
-          startpos = offset;
-      }
-      if (startpos > 0 && marker >= 0x43485300 && marker < 0x43485400) {
-        endpos = offset;
-      }
-      offset += 1;
-    }
-    saveAs(file.slice(startpos, endpos + 3),file.name.substr(0, file.name.lastIndexOf(".")) + ".mid");
-  };
-  reader.readAsArrayBuffer(file);
-}
+  // polyfill for older browsers
+  if (!Object.keys) Object.keys = function(o) {
+    if (o !== Object(o))
+      throw new TypeError('Object.keys called on a non-object');
+    var k = [],
+      p;
+    for (p in o)
+      if (Object.prototype.hasOwnProperty.call(o, p)) k.push(p);
+    return k;
+  }
 </script>
-<input type="file" id="files" name="file" />
+<script>
+  /*global saveAs */
+  /*global JSZip */
+  var zip = new JSZip();
+  var count = 0;
+
+  function convert2Midi() {
+    var files = document.getElementById('files').files;
+    if (files) {
+
+      for (var i = 0, f; f = files[i]; i++) {
+        var r = new FileReader();
+        r.onload = (function(f) {
+          return function(e) {
+            var view = new DataView(e.target.result);
+            var length = view.byteLength,
+              offset = 4,
+              startpos = 0,
+              endpos = length;
+            while (offset < length - 4) {
+              var marker = view.getUint32(offset, false);
+              if (marker == 0x4D546864) {
+                startpos = offset;
+              }
+              if (startpos > 0 && marker >= 0x43485300 && marker < 0x43485400) {
+                endpos = offset;
+              }
+              offset += 1;
+            }
+            count += 1;
+            zip.file(f.name.substr(0, f.name.lastIndexOf(".")) + ".mid", f.slice(startpos, endpos + 3), { binary: true });
+            if (count == i) {
+              zip.generateAsync({ type: "blob" }).then(function(blob) {
+                saveAs(blob, "MIDI.zip");
+              });
+            }
+          };
+        })(f);
+        r.readAsArrayBuffer(f);
+      }
+    }
+    else {
+      alert("Failed to load files");
+    }
+  }
+</script>
+<input type="file" id="files" name="files" multiple="multiple"/>
 <button onclick="convert2Midi()">Convert</button>
 </html>
