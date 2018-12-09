@@ -46,6 +46,7 @@
             if (count == i) {
               zip.generateAsync({ type: "blob" }).then(function(blob) {
                 saveAs(blob, "MIDI.zip");
+                location.reload();
               });
             }
           };
@@ -56,7 +57,6 @@
     else {
       alert("Failed to load files");
     }
-    location.reload();
   }
 </script>
 <input type="file" id="files" name="files" multiple="multiple"/>
