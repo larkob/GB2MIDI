@@ -16,12 +16,10 @@
   /*global saveAs */
   /*global JSZip */
   var zip = new JSZip();
-  var count = 0;
 
   function convert2Midi() {
     var files = document.getElementById('files').files;
     if (files) {
-
       for (var i = 0, f; f = files[i]; i++) {
         var r = new FileReader();
         r.onload = (function(f) {
@@ -41,13 +39,10 @@
               }
               offset += 1;
             }
-            count += 1;
             zip.file(f.name.substr(0, f.name.lastIndexOf(".")) + ".mid", f.slice(startpos, endpos + 3), { binary: true });
-            if (count == i) {
-              zip.generateAsync({ type: "blob" }).then(function(blob) {
-                saveAs(blob, "MIDI.zip");
-              });
-            }
+            zip.generateAsync({ type: "blob" }).then(function(blob) {
+              saveAs(blob, "MIDI.zip");
+            });
           };
         })(f);
         r.readAsArrayBuffer(f);
